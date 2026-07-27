@@ -284,20 +284,20 @@ static void yy_fatal_error YY_PROTO(( yyconst char msg[] ));
 
 #define YY_NUM_RULES 3
 #define YY_END_OF_BUFFER 4
-static yyconst short int yy_accept[9] =
+static yyconst short int yy_accept[10] =
     {   0,
-        0,    0,    4,    2,    2,    0,    1,    0
+        0,    0,    4,    3,    2,    3,    2,    1,    0
     } ;
 
 static yyconst int yy_ec[256] =
     {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    2,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    3,
-        1,    4,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    2,    1,    1,    3,    3,    3,
+        3,    3,    3,    3,    3,    3,    3,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -321,31 +321,33 @@ static yyconst int yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst int yy_meta[5] =
+static yyconst int yy_meta[4] =
     {   0,
-        1,    1,    1,    1
+        1,    1,    2
     } ;
 
-static yyconst short int yy_base[10] =
+static yyconst short int yy_base[13] =
     {   0,
-        0,    0,    8,    9,    3,    2,    9,    9,    4
+        6,    0,    8,   10,    0,    0,    0,    0,   10,    3,
+        5,    4
     } ;
 
-static yyconst short int yy_def[10] =
+static yyconst short int yy_def[13] =
     {   0,
-        8,    1,    8,    8,    9,    9,    8,    0,    8
+       10,    9,    9,    9,   11,   12,   11,   12,    0,    9,
+        9,    9
     } ;
 
 static yyconst short int yy_nxt[14] =
     {   0,
-        4,    4,    5,    4,    6,    7,    7,    8,    3,    8,
-        8,    8,    8
+        4,    6,    5,    4,    4,    8,    7,    9,    5,    3,
+        9,    9,    9
     } ;
 
 static yyconst short int yy_chk[14] =
     {   0,
-        1,    1,    1,    1,    9,    6,    5,    3,    8,    8,
-        8,    8,    8
+        2,    2,    2,   10,   10,   12,   11,    3,    1,    9,
+        9,    9,    9
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -359,12 +361,10 @@ static char *yy_last_accepting_cpos;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "html.l"
+#line 1 "pnnn.l"
 #define INITIAL 0
-#line 2 "html.l"
-#include <stdio.h>
-
-FILE *yyin, *yyout;
+#line 2 "pnnn.l"
+int positive_no = 0, negative_no = 0;
 #line 369 "lex.yy.c"
 
 /* Macros after this point can all be overridden by user definitions in
@@ -508,6 +508,9 @@ YY_MALLOC_DECL
 #endif
 
 #define YY_RULE_SETUP \
+	if ( yyleng > 0 ) \
+		yy_current_buffer->yy_at_bol = \
+				(yytext[yyleng - 1] == '\n'); \
 	YY_USER_ACTION
 
 YY_DECL
@@ -516,10 +519,9 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 7 "html.l"
+#line 5 "pnnn.l"
 
-
-#line 523 "lex.yy.c"
+#line 525 "lex.yy.c"
 
 	if ( yy_init )
 		{
@@ -558,6 +560,7 @@ YY_DECL
 		yy_bp = yy_cp;
 
 		yy_current_state = yy_start;
+		yy_current_state += YY_AT_BOL();
 yy_match:
 		do
 			{
@@ -570,13 +573,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 9 )
+				if ( yy_current_state >= 10 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 9 );
+		while ( yy_base[yy_current_state] != 10 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -604,20 +607,22 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 9 "html.l"
-{ fprintf(yyout, "%s\n", yytext); }
+#line 6 "pnnn.l"
+{negative_no++;
+			printf("negative number = %s\n",yytext);} 
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 11 "html.l"
-;
+#line 9 "pnnn.l"
+{positive_no++;
+		printf("positive number = %s\n",yytext);}	
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 13 "html.l"
+#line 12 "pnnn.l"
 ECHO;
 	YY_BREAK
-#line 621 "lex.yy.c"
+#line 626 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -897,6 +902,7 @@ static yy_state_type yy_get_previous_state()
 	register char *yy_cp;
 
 	yy_current_state = yy_start;
+	yy_current_state += YY_AT_BOL();
 
 	for ( yy_cp = yytext_ptr + YY_MORE_ADJ; yy_cp < yy_c_buf_p; ++yy_cp )
 		{
@@ -909,7 +915,7 @@ static yy_state_type yy_get_previous_state()
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 9 )
+			if ( yy_current_state >= 10 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -944,11 +950,11 @@ yy_state_type yy_current_state;
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 9 )
+		if ( yy_current_state >= 10 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 8);
+	yy_is_jam = (yy_current_state == 9);
 
 	return yy_is_jam ? 0 : yy_current_state;
 	}
@@ -1067,6 +1073,7 @@ static int input()
 	*yy_c_buf_p = '\0';	/* preserve yytext */
 	yy_hold_char = *++yy_c_buf_p;
 
+	yy_current_buffer->yy_at_bol = (c == '\n');
 
 	return c;
 	}
@@ -1503,37 +1510,17 @@ int main()
 	return 0;
 	}
 #endif
-#line 13 "html.l"
+#line 12 "pnnn.l"
 
 
-int yywrap()
+int yywrap(){}
+int main()											
 {
-    return 1;
-}
 
-int main()
-{
-    yyin = fopen("sample.html", "r");
-    if (yyin == NULL)
-    {
-        printf("Error: Cannot open sample.html\n");
-        return 1;
-    }
+yylex();
+printf ("number of positive numbers = %d,"
+		"number of negative numbers = %d\n",
+				positive_no, negative_no);
 
-    yyout = fopen("output.txt", "w");
-    if (yyout == NULL)
-    {
-        printf("Error: Cannot create output.txt\n");
-        fclose(yyin);
-        return 1;
-    }
-
-    yylex();
-
-    fclose(yyin);
-    fclose(yyout);
-
-    printf("HTML tags extracted successfully.\n");
-
-    return 0;
+return 0;
 }
