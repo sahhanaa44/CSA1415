@@ -1,24 +1,33 @@
 %{
-int positive_no = 0, negative_no = 0;
+#include <stdio.h>
+
+int pos = 0, neg = 0;
 %}
 
 %%
-^[-][0-9]+ {negative_no++;
-			printf("negative number = %s\n",yytext);} 
 
-[0-9]+ {positive_no++;
-		printf("positive number = %s\n",yytext);}	
+-[0-9]+      { neg++; }
+
+[0-9]+       { pos++; }
+
+[ \t\n]+     ;      /* Ignore spaces, tabs, and newlines */
+
+.            ;      /* Ignore other characters */
 
 %%
 
-int yywrap(){}
-int main()											
+int yywrap()
 {
+    return 1;
+}
 
-yylex();
-printf ("number of positive numbers = %d,"
-		"number of negative numbers = %d\n",
-				positive_no, negative_no);
+int main()
+{
+    printf("Enter numbers (Ctrl+Z then Enter to stop):\n");
+    yylex();
 
-return 0;
+    printf("\nNumber of positive numbers = %d", pos);
+    printf("\nNumber of negative numbers = %d\n", neg);
+
+    return 0;
 }
