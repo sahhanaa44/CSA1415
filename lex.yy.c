@@ -282,29 +282,30 @@ static void yy_fatal_error YY_PROTO(( yyconst char msg[] ));
 	*yy_cp = '\0'; \
 	yy_c_buf_p = yy_cp;
 
-#define YY_NUM_RULES 3
-#define YY_END_OF_BUFFER 4
-static yyconst short int yy_accept[8] =
+#define YY_NUM_RULES 4
+#define YY_END_OF_BUFFER 5
+static yyconst short int yy_accept[13] =
     {   0,
-        0,    0,    4,    3,    1,    2,    0
+        0,    0,    5,    3,    4,    3,    3,    2,    1,    2,
+        1,    0
     } ;
 
 static yyconst int yy_ec[256] =
     {   0,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    2,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    3,    1,    1,    1,    1,    4,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    2,    3,    3,    3,    2,    3,
-        3,    3,    2,    3,    3,    3,    3,    3,    2,    3,
-        3,    3,    3,    3,    2,    3,    3,    3,    3,    3,
-        1,    1,    1,    1,    1,    1,    2,    3,    3,    3,
 
-        2,    3,    3,    3,    2,    3,    3,    3,    3,    3,
-        2,    3,    3,    3,    3,    3,    2,    3,    3,    3,
-        3,    3,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -321,29 +322,33 @@ static yyconst int yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst int yy_meta[4] =
+static yyconst int yy_meta[5] =
     {   0,
-        1,    1,    1
+        1,    2,    1,    1
     } ;
 
-static yyconst short int yy_base[8] =
+static yyconst short int yy_base[16] =
     {   0,
-        0,    0,    4,    5,    5,    5,    5
+        0,    0,   11,    0,   12,    4,    0,    0,    0,    0,
+        0,   12,    9,    8,    5
     } ;
 
-static yyconst short int yy_def[8] =
+static yyconst short int yy_def[16] =
     {   0,
-        7,    1,    7,    7,    7,    7,    0
+       12,    1,   12,   13,   12,   12,   13,   14,   15,   14,
+       15,    0,   12,   12,   12
     } ;
 
-static yyconst short int yy_nxt[9] =
+static yyconst short int yy_nxt[17] =
     {   0,
-        4,    5,    6,    7,    3,    7,    7,    7
+        4,    5,    4,    6,    7,   11,    8,    9,   10,    7,
+       12,    3,   12,   12,   12,   12
     } ;
 
-static yyconst short int yy_chk[9] =
+static yyconst short int yy_chk[17] =
     {   0,
-        1,    1,    1,    3,    7,    7,    7,    7
+        1,    1,    1,    1,    6,   15,    6,    6,   14,   13,
+        3,   12,   12,   12,   12,   12
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -357,12 +362,11 @@ static char *yy_last_accepting_cpos;
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
-#line 1 "vnc.l"
+#line 1 "com.l"
 #define INITIAL 0
-#line 2 "vnc.l"
-int vow_count=0;
-int const_count=0;
-#line 366 "lex.yy.c"
+#line 2 "com.l"
+#include<stdio.h>
+#line 370 "lex.yy.c"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -513,9 +517,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 5 "vnc.l"
+#line 4 "com.l"
 
-#line 519 "lex.yy.c"
+
+#line 524 "lex.yy.c"
 
 	if ( yy_init )
 		{
@@ -566,13 +571,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 8 )
+				if ( yy_current_state >= 13 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 5 );
+		while ( yy_base[yy_current_state] != 12 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -600,20 +605,25 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 6 "vnc.l"
-{vow_count++;}
+#line 6 "com.l"
+{ printf("\n%s is COMMENT", yytext);}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 7 "vnc.l"
-{const_count++;}
+#line 7 "com.l"
+{ printf("\n%s is COMMENT", yytext);}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 8 "vnc.l"
+#line 8 "com.l"
+{ printf("\n %s is NOT A COMMENT",yytext);}
+	YY_BREAK
+case 4:
+YY_RULE_SETUP
+#line 9 "com.l"
 ECHO;
 	YY_BREAK
-#line 617 "lex.yy.c"
+#line 627 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -905,7 +915,7 @@ static yy_state_type yy_get_previous_state()
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 8 )
+			if ( yy_current_state >= 13 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -940,11 +950,11 @@ yy_state_type yy_current_state;
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 8 )
+		if ( yy_current_state >= 13 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 7);
+	yy_is_jam = (yy_current_state == 12);
 
 	return yy_is_jam ? 0 : yy_current_state;
 	}
@@ -1499,15 +1509,11 @@ int main()
 	return 0;
 	}
 #endif
-#line 8 "vnc.l"
+#line 9 "com.l"
 
 int yywrap(){}
+
 int main()
 {
-printf("enter the string of vowels and consonents:");
-yylex();
-printf("number of vowels are:%d\n",vow_count);
-printf("number of consonents are:%d\n",const_count);
-return 0;
+	while( yylex());
 }
-
