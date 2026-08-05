@@ -26,6 +26,5 @@ int main()
         printf("%s is a Valid Identifier.\n", id);
     else
         printf("%s is an Invalid Identifier.\n", id);
-
     return 0;
 }
