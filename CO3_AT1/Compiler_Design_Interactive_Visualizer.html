@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CompilerLab — Interactive Compiler Design Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eef1f6;
+  --bg-dot:#e2e7f0;
+  --ink:#171d2b;
+  --ink-soft:#5b6478;
+  --panel:#ffffff;
+  --panel-border:#dbe0eb;
+  --rail:#f4f6fb;
+  --input-c:#2456e5;
+  --input-c-soft:#e7edfd;
+  --proc-c:#c2740a;
+  --proc-c-soft:#fbeed9;
+  --result-c:#0e8f5f;
+  --result-c-soft:#e2f6ec;
+  --error-c:#d33a3a;
+  --error-c-soft:#fbe4e4;
+  --accent:#33299a;
+  --accent-2:#4f3fcf;
+  --mono:'JetBrains Mono', ui-monospace, monospace;
+  --sans:'Inter', system-ui, sans-serif;
+  --radius:10px;
+  --shadow:0 1px 2px rgba(23,29,43,.04), 0 8px 24px -12px rgba(23,29,43,.12);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--sans);
+  background:
+    radial-gradient(circle at 1px 1px, var(--bg-dot) 1px, transparent 0) 0 0/22px 22px,
+    var(--bg);
+  color:var(--ink);
+  min-height:100vh;
+}
+::selection{background:var(--input-c-soft);}
+button{font-family:inherit;}
+input,select{font-family:inherit;}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:40;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:18px;
+  padding:14px 24px;
+  background:linear-gradient(180deg,#1c1440,#231a52);
+  border-bottom:1px solid #140f31;
+  flex-wrap:wrap;
+}
+.brand{display:flex; align-items:baseline; gap:10px; color:#fff;}
+.brand .mark{
+  font-family:var(--mono); font-weight:800; font-size:15px;
+  background:#fff; color:var(--accent); padding:3px 7px; border-radius:6px;
+  letter-spacing:.5px;
+}
+.brand-title{font-weight:800; font-size:16px; letter-spacing:.2px;}
+.brand-sub{font-family:var(--mono); font-size:11px; color:#bcb4f2; letter-spacing:.3px;}
+.tabs{display:flex; gap:6px; flex-wrap:wrap;}
+.tab-btn{
+  appearance:none; border:1px solid transparent; cursor:pointer;
+  background:rgba(255,255,255,.06); color:#d8d4f7;
+  font-family:var(--mono); font-size:12.5px; font-weight:600;
+  padding:8px 12px; border-radius:8px;
+  display:flex; align-items:center; gap:7px;
+  transition:all .15s ease;
+}
+.tab-btn .num{color:#8f86d6; font-weight:700;}
+.tab-btn:hover{background:rgba(255,255,255,.13); color:#fff;}
+.tab-btn.active{background:#fff; color:var(--accent); box-shadow:var(--shadow);}
+.tab-btn.active .num{color:var(--proc-c);}
+
+/* ---------- Layout ---------- */
+main{max-width:1360px; margin:0 auto; padding:22px 22px 60px;}
+.page{display:none;}
+.page.active{display:block; animation:fadein .25s ease;}
+@keyframes fadein{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+
+.page-head{margin:4px 4px 16px;}
+.page-eyebrow{
+  font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--accent);
+  letter-spacing:1.2px; text-transform:uppercase; display:flex; align-items:center; gap:8px;
+}
+.page-eyebrow::before{content:''; width:16px; height:2px; background:var(--proc-c); display:inline-block; border-radius:2px;}
+.page-title{font-size:26px; font-weight:800; margin:6px 0 2px; letter-spacing:-.3px;}
+.page-desc{color:var(--ink-soft); font-size:14.5px; max-width:760px; line-height:1.55;}
+
+.grid{display:grid; grid-template-columns:340px 1fr; gap:18px; align-items:start;}
+@media (max-width:980px){ .grid{grid-template-columns:1fr;} }
+
+/* ---------- IDE panel look ---------- */
+.ide-panel{
+  background:var(--panel); border:1px solid var(--panel-border); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden; margin-bottom:16px;
+}
+.titlebar{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; background:var(--rail); border-bottom:1px solid var(--panel-border);
+}
+.dots{display:flex; gap:5px;}
+.dots i{width:8px; height:8px; border-radius:50%; display:inline-block;}
+.dots i:nth-child(1){background:#e5645a;}
+.dots i:nth-child(2){background:#e8b23d;}
+.dots i:nth-child(3){background:#59b06a;}
+.filename{font-family:var(--mono); font-size:12px; color:var(--ink-soft); font-weight:600;}
+.filename b{color:var(--ink); font-weight:700;}
+.panel-body{padding:16px;}
+.panel-body h2{font-size:14px; margin:0 0 6px; letter-spacing:-.1px;}
+.panel-body h3{font-size:12.5px; margin:0 0 6px; text-transform:uppercase; letter-spacing:.6px; color:var(--ink-soft);}
+.panel-body p{font-size:13.2px; line-height:1.55; color:#333c4f; margin:0 0 12px;}
+
+label{display:block; font-family:var(--mono); font-size:11px; font-weight:700; color:var(--input-c); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;}
+.field{margin-bottom:12px;}
+.field-row{display:flex; gap:8px;}
+.field-row .field{flex:1;}
+input[type="text"], input[type="number"], select{
+  width:100%; padding:9px 10px; border-radius:8px; border:1.5px solid var(--panel-border);
+  font-family:var(--mono); font-size:13px; background:var(--input-c-soft); color:var(--ink);
+  outline:none; transition:border-color .15s;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus{border-color:var(--input-c);}
+
+.btn-row{display:flex; gap:8px; margin:12px 0;}
+.btn{
+  border:none; cursor:pointer; border-radius:8px; padding:10px 14px;
+  font-weight:700; font-size:13px; font-family:var(--sans); transition:transform .1s, box-shadow .15s;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:var(--accent); color:#fff; flex:1;}
+.btn.primary:hover{background:var(--accent-2);}
+.btn.ghost{background:#fff; color:var(--ink-soft); border:1.5px solid var(--panel-border);}
+.btn.ghost:hover{border-color:var(--ink-soft);}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+
+.step-controls{
+  display:flex; align-items:center; gap:6px; margin:10px 0 14px; flex-wrap:wrap;
+  background:var(--rail); border:1px solid var(--panel-border); border-radius:8px; padding:8px;
+}
+.step-controls .btn{padding:7px 10px; font-size:12px;}
+.step-badge{
+  font-family:var(--mono); font-size:11.5px; font-weight:700; color:var(--proc-c);
+  background:var(--proc-c-soft); padding:5px 9px; border-radius:20px; white-space:nowrap;
+}
+
+.error-box{
+  background:var(--error-c-soft); color:var(--error-c); border:1px solid #f2b9b9;
+  padding:10px 12px; border-radius:8px; font-size:12.5px; font-family:var(--mono);
+  margin-bottom:12px; line-height:1.5;
+}
+.hidden{display:none !important;}
+
+.howitworks{border-top:1px dashed var(--panel-border); padding-top:12px; margin-top:4px;}
+.howitworks p{margin:0; font-size:12.5px; color:var(--ink-soft);}
+
+/* ---------- Canvas / visualization ---------- */
+.canvas-panel .titlebar{justify-content:space-between;}
+.legend{display:flex; gap:10px; font-family:var(--mono); font-size:10.5px; color:var(--ink-soft);}
+.legend span{display:flex; align-items:center; gap:4px;}
+.legend i{width:8px; height:8px; border-radius:2px; display:inline-block;}
+.legend .li-input{background:var(--input-c);}
+.legend .li-proc{background:var(--proc-c);}
+.legend .li-result{background:var(--result-c);}
+
+.canvas{
+  min-height:300px; padding:18px; overflow:auto;
+  background:
+    linear-gradient(0deg, transparent 24px, transparent 25px),
+    var(--panel);
+  display:flex; align-items:center; justify-content:center;
+}
+.canvas svg{width:100%; height:auto; min-height:280px; font-family:var(--mono);}
+
+.node-rect{fill:#fff; stroke:var(--panel-border); stroke-width:1.6; transition:all .25s ease;}
+.node-rect.leaf{fill:var(--input-c-soft); stroke:var(--input-c);}
+.node-rect.op{fill:#fff; stroke:#c7cede;}
+.node-rect.active{fill:var(--proc-c-soft); stroke:var(--proc-c); stroke-width:2.2;}
+.node-rect.done{fill:var(--result-c-soft); stroke:var(--result-c);}
+.node-label{font-size:13px; font-weight:700; fill:var(--ink); text-anchor:middle; dominant-baseline:middle; font-family:var(--mono);}
+.node-value{font-size:10.5px; font-weight:700; fill:var(--result-c); text-anchor:middle; font-family:var(--mono);}
+.node-value.reveal{animation:popval .35s ease;}
+@keyframes popval{from{opacity:0; transform:translateY(6px) scale(.7);} to{opacity:1; transform:translateY(0) scale(1);}}
+.edge-line{stroke:#c7cede; stroke-width:1.6; transition:stroke .2s;}
+.edge-line.flow{stroke:var(--proc-c); stroke-width:2.2;}
+.inh-arrow{stroke:var(--input-c); stroke-width:1.8; opacity:0; transition:opacity .25s;}
+.inh-arrow.show{opacity:1;}
+.env-label{font-size:9.5px; fill:var(--input-c); font-family:var(--mono); text-anchor:middle;}
+
+/* ---------- Stack visualization (Q2) ---------- */
+.stack-wrap{display:flex; gap:26px; align-items:flex-end; justify-content:center; flex-wrap:wrap; width:100%;}
+.stack-col{display:flex; flex-direction:column-reverse; gap:6px; min-width:90px; align-items:center;}
+.stack-base{font-family:var(--mono); font-size:10px; color:var(--ink-soft); margin-top:4px;}
+.stack-box{
+  width:78px; height:38px; border-radius:7px; border:1.6px solid var(--input-c);
+  background:var(--input-c-soft); color:var(--ink); font-family:var(--mono); font-weight:700;
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+  animation:stackpush .25s ease;
+}
+@keyframes stackpush{from{opacity:0; transform:translateY(-14px) scale(.9);} to{opacity:1; transform:translateY(0) scale(1);}}
+.stack-box.result{border-color:var(--result-c); background:var(--result-c-soft); color:var(--result-c);}
+.token-track{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-bottom:18px;}
+.token-chip{
+  font-family:var(--mono); font-weight:700; font-size:13px; padding:6px 10px; border-radius:7px;
+  border:1.6px solid var(--panel-border); background:#fff; color:var(--ink-soft);
+}
+.token-chip.current{border-color:var(--proc-c); background:var(--proc-c-soft); color:var(--proc-c); transform:scale(1.08);}
+.token-chip.processed{border-color:var(--panel-border); background:var(--rail); color:#9aa2b4;}
+
+/* ---------- Type panels (Q4/Q5) ---------- */
+.type-compare{display:flex; align-items:flex-start; justify-content:center; gap:24px; flex-wrap:wrap; width:100%;}
+.type-card{
+  border:1.6px solid var(--panel-border); border-radius:10px; padding:14px; min-width:190px;
+  background:#fff; transition:all .25s ease;
+}
+.type-card.active-cmp{border-color:var(--proc-c); box-shadow:0 0 0 3px var(--proc-c-soft);}
+.type-card.match{border-color:var(--result-c); box-shadow:0 0 0 3px var(--result-c-soft);}
+.type-card.mismatch{border-color:var(--error-c); box-shadow:0 0 0 3px var(--error-c-soft);}
+.type-card h4{margin:0 0 8px; font-family:var(--mono); font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.5px;}
+.type-layer{
+  font-family:var(--mono); font-size:12.5px; padding:6px 8px; border-radius:6px; margin-bottom:6px;
+  background:var(--rail); border:1px solid var(--panel-border);
+}
+.type-layer.base{background:var(--input-c-soft); border-color:var(--input-c); color:var(--input-c); font-weight:700;}
+.vs-badge{
+  align-self:center; margin-top:38px; font-family:var(--mono); font-weight:800; color:#fff;
+  background:var(--accent); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+}
+.verdict{
+  margin-top:16px; text-align:center; font-family:var(--mono); font-weight:800; font-size:16px;
+  padding:10px; border-radius:8px; width:100%;
+}
+.verdict.equiv{background:var(--result-c-soft); color:var(--result-c);}
+.verdict.notequiv{background:var(--error-c-soft); color:var(--error-c);}
+
+.typecheck-flow{display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; width:100%;}
+.operand-chip{
+  font-family:var(--mono); font-weight:700; font-size:14px; padding:10px 16px; border-radius:9px;
+  border:1.8px solid var(--input-c); background:var(--input-c-soft); color:var(--input-c); text-align:center; min-width:80px;
+  transition:all .3s ease;
+}
+.operand-chip small{display:block; font-size:9.5px; font-weight:600; color:var(--ink-soft); margin-top:3px;}
+.operand-chip.promoted{border-color:var(--proc-c); background:var(--proc-c-soft); color:var(--proc-c);}
+.op-chip{font-family:var(--mono); font-weight:800; font-size:20px; color:var(--ink-soft);}
+.arrow-down{font-family:var(--mono); color:var(--proc-c); font-size:12px; text-align:center; margin:4px 0;}
+.result-chip{
+  font-family:var(--mono); font-weight:800; font-size:15px; padding:12px 18px; border-radius:9px;
+  border:2px solid var(--result-c); background:var(--result-c-soft); color:var(--result-c); text-align:center;
+}
+.result-chip.err{border-color:var(--error-c); background:var(--error-c-soft); color:var(--error-c);}
+
+/* ---------- Output / explanation feed ---------- */
+.output-panel .panel-body{padding:14px 16px;}
+.explain-feed{display:flex; flex-direction:column; gap:8px; min-height:40px;}
+.explain-item{
+  display:flex; gap:10px; align-items:flex-start; padding:9px 11px; border-radius:8px;
+  background:var(--rail); border:1px solid var(--panel-border); font-size:12.8px; line-height:1.5;
+  animation:fadein .25s ease;
+}
+.explain-item .tag{
+  font-family:var(--mono); font-size:10px; font-weight:800; padding:2px 6px; border-radius:5px; white-space:nowrap;
+  background:var(--proc-c-soft); color:var(--proc-c); margin-top:1px;
+}
+.explain-item.result-tag .tag{background:var(--result-c-soft); color:var(--result-c);}
+.explain-item.input-tag .tag{background:var(--input-c-soft); color:var(--input-c);}
+.result-box{
+  margin-top:12px; font-family:var(--mono); font-weight:800; font-size:16px; text-align:center;
+  padding:12px; border-radius:9px; background:var(--result-c-soft); color:var(--result-c); border:1.6px solid var(--result-c);
+}
+
+.env-strip{display:flex; gap:8px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;}
+.env-pill{font-family:var(--mono); font-size:11.5px; padding:5px 10px; border-radius:20px; background:var(--input-c-soft); color:var(--input-c); font-weight:700; border:1px solid var(--input-c);}
+
+footer{text-align:center; padding:26px; color:var(--ink-soft); font-size:12px; font-family:var(--mono);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">λ</span>
+    <div>
+      <div class="brand-title">CompilerLab</div>
+      <div class="brand-sub">interactive compiler-design visualizer</div>
+    </div>
+  </div>
+  <nav class="tabs" id="tabNav">
+    <button class="tab-btn active" data-tab="q1"><span class="num">01</span>SDD</button>
+    <button class="tab-btn" data-tab="q2"><span class="num">02</span>Postfix Eval</button>
+    <button class="tab-btn" data-tab="q3"><span class="num">03</span>L-Attributed</button>
+    <button class="tab-btn" data-tab="q4"><span class="num">04</span>Type Equivalence</button>
+    <button class="tab-btn" data-tab="q5"><span class="num">05</span>Type Checking</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ================= Q1 : SDD ================= -->
+<section id="q1" class="page active">
+  <div class="page-head">
+    <div class="page-eyebrow">Question 01</div>
+    <div class="page-title">Syntax-Directed Definition — Synthesized Attributes</div>
+    <p class="page-desc">Parses an arithmetic expression into a syntax tree, then evaluates it bottom-up: each internal node computes its value only after both children are known, and that value is <em>synthesized</em> upward toward the root.</p>
+  </div>
+  <div class="grid">
+    <aside>
+      <div class="ide-panel">
+        <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span class="filename">q1 / <b>sdd.expr</b></span></div>
+        <div class="panel-body">
+          <h2>Concept</h2>
+          <p>Every node's value is <b>synthesized</b> from its children — evaluation flows strictly bottom-up. Precedence (<code>*</code>&nbsp;/&nbsp;<code>/</code> before <code>+</code>&nbsp;/&nbsp;<code>-</code>) and associativity are baked into the tree shape itself.</p>
+          <div class="field">
+            <label>Expression</label>
+            <input type="text" id="q1-input" value="3 + 4 * (2 - 1)">
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="q1-run">▶ Run Simulation</button>
+            <button class="btn ghost" id="q1-reset">↺ Reset</button>
+          </div>
+          <div class="error-box hidden" id="q1-error"></div>
+          <div class="step-controls">
+            <button class="btn ghost" id="q1-prev">◀ Prev</button>
+            <span class="step-badge" id="q1-badge">Step 0 of 0</span>
+            <button class="btn ghost" id="q1-next">Next ▶</button>
+            <button class="btn ghost" id="q1-play">⏵ Auto Run</button>
+          </div>
+          <div class="howitworks">
+            <h3>How it works</h3>
+            <p>The expression is tokenized and parsed with a recursive-descent parser (E → E±T | T, T → T×F | T÷F | F, F → num | (E)) so the tree structure alone encodes precedence. Click Next / Auto Run to watch each node combine its children's synthesized values.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="ide-panel canvas-panel">
+        <div class="titlebar">
+          <span class="filename">syntax-tree.view</span>
+          <span class="legend"><span><i class="li-input"></i>leaf</span><span><i class="li-proc"></i>evaluating</span><span><i class="li-result"></i>computed</span></span>
+        </div>
+        <div class="canvas" id="q1-canvas"><svg id="q1-svg" viewBox="0 0 600 260"></svg></div>
+      </div>
+      <div class="ide-panel output-panel">
+        <div class="titlebar"><span class="filename">terminal / <b>output</b></span></div>
+        <div class="panel-body">
+          <div class="explain-feed" id="q1-explain"></div>
+          <div class="result-box hidden" id="q1-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Q2 : Postfix ================= -->
+<section id="q2" class="page">
+  <div class="page-head">
+    <div class="page-eyebrow">Question 02</div>
+    <div class="page-title">Postfix Expression Evaluation — Stack Machine</div>
+    <p class="page-desc">Reads a postfix (Reverse Polish) expression token by token. Operands are pushed; operators pop two operands, compute a result, and push it back — a direct, mechanical model of bottom-up, S-attributed evaluation.</p>
+  </div>
+  <div class="grid">
+    <aside>
+      <div class="ide-panel">
+        <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span class="filename">q2 / <b>postfix.expr</b></span></div>
+        <div class="panel-body">
+          <h2>Concept</h2>
+          <p>Postfix removes the need for parentheses or precedence rules at evaluation time — a stack alone is enough, which is exactly why compilers translate expressions into postfix / three-address form.</p>
+          <div class="field">
+            <label>Postfix expression</label>
+            <input type="text" id="q2-input" value="2 3 * 5 4 * +">
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="q2-run">▶ Run Simulation</button>
+            <button class="btn ghost" id="q2-reset">↺ Reset</button>
+          </div>
+          <div class="error-box hidden" id="q2-error"></div>
+          <div class="step-controls">
+            <button class="btn ghost" id="q2-prev">◀ Prev</button>
+            <span class="step-badge" id="q2-badge">Step 0 of 0</span>
+            <button class="btn ghost" id="q2-next">Next ▶</button>
+            <button class="btn ghost" id="q2-play">⏵ Auto Run</button>
+          </div>
+          <div class="howitworks">
+            <h3>How it works</h3>
+            <p>Tokens are read left to right. Numbers are pushed. An operator pops the top two values (b then a), applies <code>a op b</code>, and pushes the result. This is the classic S-attributed / bottom-up evaluation strategy.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="ide-panel canvas-panel">
+        <div class="titlebar">
+          <span class="filename">stack-machine.view</span>
+          <span class="legend"><span><i class="li-input"></i>pushed</span><span><i class="li-proc"></i>current token</span><span><i class="li-result"></i>result</span></span>
+        </div>
+        <div class="canvas" id="q2-canvas">
+          <div style="width:100%">
+            <div class="token-track" id="q2-tokens"></div>
+            <div class="stack-wrap"><div class="stack-col" id="q2-stack"></div></div>
+            <div class="stack-base">↑ stack top</div>
+          </div>
+        </div>
+      </div>
+      <div class="ide-panel output-panel">
+        <div class="titlebar"><span class="filename">terminal / <b>output</b></span></div>
+        <div class="panel-body">
+          <div class="explain-feed" id="q2-explain"></div>
+          <div class="result-box hidden" id="q2-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Q3 : L-Attributed ================= -->
+<section id="q3" class="page">
+  <div class="page-head">
+    <div class="page-eyebrow">Question 03</div>
+    <div class="page-title">L-Attributed Definition — Inherited + Synthesized</div>
+    <p class="page-desc">Demonstrates the two directions of attribute flow in one tree: an <em>inherited</em> environment is passed top-down from parent to children (left to right), while each node's <em>value</em> is synthesized bottom-up once its children are known — the defining trait of an L-attributed definition.</p>
+  </div>
+  <div class="grid">
+    <aside>
+      <div class="ide-panel">
+        <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span class="filename">q3 / <b>lattr.expr</b></span></div>
+        <div class="panel-body">
+          <h2>Concept</h2>
+          <p>The variable environment is <b>inherited</b>: it only ever depends on the parent (or a left sibling), so it can be passed downward during a single left-to-right, top-down traversal. Each identifier's value is then <b>synthesized</b> back upward.</p>
+          <div class="field">
+            <label>Expression (single-letter vars)</label>
+            <input type="text" id="q3-input" value="a + b * c">
+          </div>
+          <div class="field-row">
+            <div class="field"><label>a =</label><input type="number" id="q3-a" value="2"></div>
+            <div class="field"><label>b =</label><input type="number" id="q3-b" value="3"></div>
+            <div class="field"><label>c =</label><input type="number" id="q3-c" value="4"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="q3-run">▶ Run Simulation</button>
+            <button class="btn ghost" id="q3-reset">↺ Reset</button>
+          </div>
+          <div class="error-box hidden" id="q3-error"></div>
+          <div class="step-controls">
+            <button class="btn ghost" id="q3-prev">◀ Prev</button>
+            <span class="step-badge" id="q3-badge">Step 0 of 0</span>
+            <button class="btn ghost" id="q3-next">Next ▶</button>
+            <button class="btn ghost" id="q3-play">⏵ Auto Run</button>
+          </div>
+          <div class="howitworks">
+            <h3>How it works</h3>
+            <p>Phase 1 (blue arrows): the environment <code>{a,b,c}</code> is copied down from the root to every leaf — an <b>inherited</b> attribute. Phase 2 (amber → green): identical to Q1, values combine bottom-up as <b>synthesized</b> attributes, respecting precedence from the tree shape.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="ide-panel canvas-panel">
+        <div class="titlebar">
+          <span class="filename">attribute-flow.view</span>
+          <span class="legend"><span><i class="li-input"></i>inherited</span><span><i class="li-proc"></i>evaluating</span><span><i class="li-result"></i>synthesized</span></span>
+        </div>
+        <div class="canvas" id="q3-canvas">
+          <div style="width:100%">
+            <div class="env-strip" id="q3-envstrip"></div>
+            <svg id="q3-svg" viewBox="0 0 600 260" style="width:100%;"></svg>
+          </div>
+        </div>
+      </div>
+      <div class="ide-panel output-panel">
+        <div class="titlebar"><span class="filename">terminal / <b>output</b></span></div>
+        <div class="panel-body">
+          <div class="explain-feed" id="q3-explain"></div>
+          <div class="result-box hidden" id="q3-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Q4 : Type Equivalence ================= -->
+<section id="q4" class="page">
+  <div class="page-head">
+    <div class="page-eyebrow">Question 04</div>
+    <div class="page-title">Type Equivalence Checker — Structural Comparison</div>
+    <p class="page-desc">Breaks two type expressions down into pointer layers plus a base type, then compares them layer by layer — the same structural-equivalence check a compiler's semantic analyzer performs before allowing an assignment or operation.</p>
+  </div>
+  <div class="grid">
+    <aside>
+      <div class="ide-panel">
+        <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span class="filename">q4 / <b>types.cmp</b></span></div>
+        <div class="panel-body">
+          <h2>Concept</h2>
+          <p>Two types are <b>structurally equivalent</b> when they have the same pointer depth and the same base type. <code>int*</code> and <code>char*</code> are not equivalent even though both are pointers, because their base types differ.</p>
+          <div class="field-row">
+            <div class="field"><label>Type A</label><input type="text" id="q4-a" value="int*"></div>
+            <div class="field"><label>Type B</label><input type="text" id="q4-b" value="int*"></div>
+          </div>
+          <p style="margin:-6px 0 12px; font-size:11.5px; color:var(--ink-soft);">Try: int, float, char, double, int*, char*, int**</p>
+          <div class="btn-row">
+            <button class="btn primary" id="q4-run">▶ Run Simulation</button>
+            <button class="btn ghost" id="q4-reset">↺ Reset</button>
+          </div>
+          <div class="error-box hidden" id="q4-error"></div>
+          <div class="step-controls">
+            <button class="btn ghost" id="q4-prev">◀ Prev</button>
+            <span class="step-badge" id="q4-badge">Step 0 of 0</span>
+            <button class="btn ghost" id="q4-next">Next ▶</button>
+            <button class="btn ghost" id="q4-play">⏵ Auto Run</button>
+          </div>
+          <div class="howitworks">
+            <h3>How it works</h3>
+            <p>Each type string is stripped of trailing <code>*</code> characters to count pointer depth, leaving a base type. The checker compares pointer depth first, then the base type — mirroring how a symbol table stores and compares type descriptors.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="ide-panel canvas-panel">
+        <div class="titlebar">
+          <span class="filename">type-compare.view</span>
+          <span class="legend"><span><i class="li-proc"></i>comparing</span><span><i class="li-result"></i>match</span></span>
+        </div>
+        <div class="canvas" id="q4-canvas">
+          <div class="type-compare" id="q4-compare"></div>
+        </div>
+      </div>
+      <div class="ide-panel output-panel">
+        <div class="titlebar"><span class="filename">terminal / <b>output</b></span></div>
+        <div class="panel-body">
+          <div class="explain-feed" id="q4-explain"></div>
+          <div class="result-box hidden" id="q4-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= Q5 : Type Checking ================= -->
+<section id="q5" class="page">
+  <div class="page-head">
+    <div class="page-eyebrow">Question 05</div>
+    <div class="page-title">Semantic Type Checking — Arithmetic Expressions</div>
+    <p class="page-desc">Simulates a semantic analyzer validating an arithmetic operation between two operand types, applying the usual arithmetic-conversion rules (char → int → float) to decide the result type — or to flag an error.</p>
+  </div>
+  <div class="grid">
+    <aside>
+      <div class="ide-panel">
+        <div class="titlebar"><span class="dots"><i></i><i></i><i></i></span><span class="filename">q5 / <b>typecheck.expr</b></span></div>
+        <div class="panel-body">
+          <h2>Concept</h2>
+          <p>When operand types differ, the compiler inserts an implicit conversion — <b>promoting</b> the "narrower" type to the "wider" one — before applying the operator. This is why <code>int + char</code> is valid: <code>char</code> is promoted to <code>int</code>.</p>
+          <div class="field-row">
+            <div class="field"><label>Operand 1</label>
+              <select id="q5-t1"><option value="int" selected>int</option><option value="float">float</option><option value="char">char</option></select>
+            </div>
+            <div class="field"><label>Operator</label>
+              <select id="q5-op"><option value="+" selected>+</option><option value="-">-</option><option value="*">*</option><option value="/">/</option></select>
+            </div>
+            <div class="field"><label>Operand 2</label>
+              <select id="q5-t2"><option value="int">int</option><option value="float">float</option><option value="char" selected>char</option></select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="q5-run">▶ Run Simulation</button>
+            <button class="btn ghost" id="q5-reset">↺ Reset</button>
+          </div>
+          <div class="error-box hidden" id="q5-error"></div>
+          <div class="step-controls">
+            <button class="btn ghost" id="q5-prev">◀ Prev</button>
+            <span class="step-badge" id="q5-badge">Step 0 of 0</span>
+            <button class="btn ghost" id="q5-next">Next ▶</button>
+            <button class="btn ghost" id="q5-play">⏵ Auto Run</button>
+          </div>
+          <div class="howitworks">
+            <h3>How it works</h3>
+            <p>Each type is ranked (char &lt; int &lt; float). If the ranks differ, the lower-ranked operand is promoted to match the higher one before the operator is applied. Division by a zero-valued <em>type</em> is not evaluated here — this checks type compatibility, not runtime values.</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div>
+      <div class="ide-panel canvas-panel">
+        <div class="titlebar">
+          <span class="filename">semantic-analyzer.view</span>
+          <span class="legend"><span><i class="li-input"></i>operand</span><span><i class="li-proc"></i>promoting</span><span><i class="li-result"></i>result</span></span>
+        </div>
+        <div class="canvas" id="q5-canvas">
+          <div class="typecheck-flow" id="q5-flow"></div>
+        </div>
+      </div>
+      <div class="ide-panel output-panel">
+        <div class="titlebar"><span class="filename">terminal / <b>output</b></span></div>
+        <div class="panel-body">
+          <div class="explain-feed" id="q5-explain"></div>
+          <div class="result-box hidden" id="q5-result"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>CompilerLab — built for classroom demonstration · every simulation executes real parsing / stack / semantic-check logic, not scripted animation</footer>
+
+<script>
+/* ============================================================
+   SHARED UTILITIES
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id===tab));
+}
+document.getElementById('tabNav').addEventListener('click', e=>{
+  const btn = e.target.closest('.tab-btn');
+  if(btn) switchTab(btn.dataset.tab);
+});
+
+/* Generic step-machine controller shared by all 5 simulations.
+   cfg: { prefix, buildSteps(): steps[], renderStep(stepIndex, steps), onFinal(steps) } */
+function makeController(cfg){
+  const state = { steps: [], index: -1, playing: false, timer: null };
+  const badge = $(cfg.prefix+'-badge');
+  const prevBtn = $(cfg.prefix+'-prev');
+  const nextBtn = $(cfg.prefix+'-next');
+  const playBtn = $(cfg.prefix+'-play');
+  const errBox = $(cfg.prefix+'-error');
+  const explainFeed = $(cfg.prefix+'-explain');
+  const resultBox = $(cfg.prefix+'-result');
+
+  function setError(msg){
+    if(msg){ errBox.textContent = '⚠ '+msg; errBox.classList.remove('hidden'); }
+    else { errBox.classList.add('hidden'); errBox.textContent=''; }
+  }
+  function updateBadge(){
+    const total = state.steps.length;
+    badge.textContent = 'Step '+(state.index+1<=0?0:state.index+1)+' of '+total;
+    prevBtn.disabled = state.index<=0;
+    nextBtn.disabled = state.index>=total-1 || total===0;
+    playBtn.disabled = total===0;
+  }
+  function renderExplainUpTo(i){
+    explainFeed.innerHTML='';
+    resultBox.classList.add('hidden');
+    for(let k=0;k<=i;k++){
+      const s = state.steps[k];
+      if(!s) continue;
+      const div = document.createElement('div');
+      div.className = 'explain-item'+(s.tagType==='result'?' result-tag':s.tagType==='input'?' input-tag':'');
+      div.innerHTML = '<span class="tag">'+(s.tag||('STEP '+(k+1)))+'</span><span>'+s.message+'</span>';
+      explainFeed.appendChild(div);
+    }
+    explainFeed.scrollTop = explainFeed.scrollHeight;
+    const last = state.steps[i];
+    if(last && last.final){
+      resultBox.textContent = last.finalText;
+      resultBox.classList.remove('hidden');
+    }
+  }
+  function goTo(i){
+    if(i<0 || i>=state.steps.length) return;
+    state.index = i;
+    cfg.renderStep(i, state.steps);
+    renderExplainUpTo(i);
+    updateBadge();
+  }
+  function run(){
+    stopPlay();
+    setError(null);
+    resultBox.classList.add('hidden');
+    try{
+      state.steps = cfg.buildSteps();
+      state.index = -1;
+      updateBadge();
+      goTo(0);
+    }catch(err){
+      state.steps=[]; state.index=-1;
+      updateBadge();
+      cfg.renderStep(-1, []);
+      explainFeed.innerHTML='';
+      setError(err.message);
+    }
+  }
+  function reset(){
+    stopPlay();
+    setError(null);
+    state.steps=[]; state.index=-1;
+    updateBadge();
+    cfg.renderStep(-1, []);
+    explainFeed.innerHTML='';
+    resultBox.classList.add('hidden');
+    if(cfg.onReset) cfg.onReset();
+  }
+  function stopPlay(){
+    state.playing=false;
+    clearInterval(state.timer);
+    playBtn.textContent = '⏵ Auto Run';
+  }
+  function togglePlay(){
+    if(state.playing){ stopPlay(); return; }
+    if(state.steps.length===0) return;
+    state.playing = true;
+    playBtn.textContent = '⏸ Pause';
+    state.timer = setInterval(()=>{
+      if(state.index>=state.steps.length-1){ stopPlay(); return; }
+      goTo(state.index+1);
+    }, 1100);
+  }
+
+  $(cfg.prefix+'-run').addEventListener('click', run);
+  $(cfg.prefix+'-reset').addEventListener('click', reset);
+  prevBtn.addEventListener('click', ()=>{ stopPlay(); goTo(state.index-1); });
+  nextBtn.addEventListener('click', ()=>{ stopPlay(); goTo(state.index+1); });
+  playBtn.addEventListener('click', togglePlay);
+
+  updateBadge();
+  return { run, reset, goTo, state };
+}
+
+/* ============================================================
+   TREE HELPERS (used by Q1 and Q3)
+   ============================================================ */
+function tokenizeArith(str, allowIds){
+  const tokens=[]; let i=0;
+  while(i<str.length){
+    const c=str[i];
+    if(/\s/.test(c)){ i++; continue; }
+    if(/[0-9.]/.test(c)){
+      let j=i; while(j<str.length && /[0-9.]/.test(str[j])) j++;
+      tokens.push({type:'num', value:parseFloat(str.slice(i,j))}); i=j; continue;
+    }
+    if(allowIds && /[a-zA-Z]/.test(c)){
+      let j=i; while(j<str.length && /[a-zA-Z]/.test(str[j])) j++;
+      tokens.push({type:'id', name:str.slice(i,j)}); i=j; continue;
+    }
+    if('+-*/()'.includes(c)){ tokens.push({type:c}); i++; continue; }
+    throw new Error('Unexpected character "'+c+'" in expression.');
+  }
+  return tokens;
+}
+function parseArith(str, allowIds){
+  const tokens = tokenizeArith(str, allowIds);
+  if(tokens.length===0) throw new Error('Enter an expression.');
+  let pos=0, id=1;
+  function peek(){ return tokens[pos]; }
+  function parseExpr(){
+    let node=parseTerm();
+    while(peek() && (peek().type==='+'||peek().type==='-')){
+      const op=peek().type; pos++;
+      const right=parseTerm();
+      node={id:id++, kind:'op', op, left:node, right};
+    }
+    return node;
+  }
+  function parseTerm(){
+    let node=parseFactor();
+    while(peek() && (peek().type==='*'||peek().type==='/')){
+      const op=peek().type; pos++;
+      const right=parseFactor();
+      node={id:id++, kind:'op', op, left:node, right};
+    }
+    return node;
+  }
+  function parseFactor(){
+    const t=peek();
+    if(!t) throw new Error('Unexpected end of expression — check for a missing operand.');
+    if(t.type==='num'){ pos++; return {id:id++, kind:'num', value:t.value}; }
+    if(t.type==='id'){ pos++; return {id:id++, kind:'id', name:t.name}; }
+    if(t.type==='('){
+      pos++; const node=parseExpr();
+      if(!peek() || peek().type!==')') throw new Error('Missing closing ")".');
+      pos++; return node;
+    }
+    if(t.type==='-'){ pos++; const node=parseFactor(); return {id:id++, kind:'op', op:'neg', left:node, right:null}; }
+    throw new Error('Unexpected token near "'+JSON.stringify(t)+'".');
+  }
+  const tree = parseExpr();
+  if(pos<tokens.length) throw new Error('Unexpected trailing token — check your expression.');
+  return tree;
+}
+function collectAll(node, arr){ if(!node) return arr; arr.push(node); collectAll(node.left,arr); collectAll(node.right,arr); return arr; }
+function postorderOps(node, arr){
+  if(!node) return arr;
+  postorderOps(node.left, arr);
+  postorderOps(node.right, arr);
+  if(node.kind==='op') arr.push(node);
+  return arr;
+}
+function assignXY(node, depth, counter){
+  if(!node) return;
+  node.depth = depth;
+  if(node.kind!=='op' || (!node.left && !node.right)){
+    node.x = counter.n++;
+    return;
+  }
+  assignXY(node.left, depth+1, counter);
+  if(node.right) assignXY(node.right, depth+1, counter);
+  if(node.left && node.right) node.x = (node.left.x+node.right.x)/2;
+  else node.x = node.left ? node.left.x : counter.n++;
+}
+function opSymbol(op){ return op==='neg' ? '−(u)' : op; }
+
+function renderTreeSVG(svg, root, opts){
+  opts = opts||{};
+  const counter={n:0};
+  assignXY(root, 0, counter);
+  const all = collectAll(root, []);
+  const maxDepth = Math.max(...all.map(n=>n.depth));
+  const maxX = Math.max(...all.map(n=>n.x));
+  const hGap=86, vGap=78, padX=50, padY=36;
+  const width = Math.max(360, maxX*hGap + padX*2);
+  const height = maxDepth*vGap + padY*2 + 20;
+  svg.setAttribute('viewBox', '0 0 '+width+' '+height);
+  const px = n => n.x*hGap + padX;
+  const py = n => n.depth*vGap + padY;
+
+  let html='';
+  // edges
+  function drawEdges(n){
+    if(!n) return;
+    [n.left, n.right].forEach(c=>{
+      if(!c) return;
+      const cls = (opts.flowIds && opts.flowIds.has(c.id) && opts.flowIds.has(n.id)) ? 'edge-line flow' : 'edge-line';
+      html += '<line class="'+cls+'" x1="'+px(n)+'" y1="'+(py(n)+16)+'" x2="'+px(c)+'" y2="'+(py(c)-16)+'"/>';
+      drawEdges(c);
+    });
+  }
+  drawEdges(root);
+
+  // inherited-attribute arrows (Q3)
+  if(opts.showInherited){
+    function drawInh(n){
+      if(!n) return;
+      [n.left,n.right].forEach(c=>{
+        if(!c) return;
+        const active = opts.inheritedIds && opts.inheritedIds.has(c.id);
+        html += '<line class="inh-arrow'+(active?' show':'')+'" x1="'+(px(n)-14)+'" y1="'+(py(n)+6)+'" x2="'+(px(c)-10)+'" y2="'+(py(c)-18)+'" marker-end="url(#arrowhead)"/>';
+        drawInh(c);
+      });
+    }
+    drawInh(root);
+  }
+
+  // nodes
+  all.forEach(n=>{
+    const isLeaf = n.kind!=='op';
+    const active = opts.activeId===n.id;
+    const computed = opts.computedMap && opts.computedMap.has(n.id);
+    let cls='node-rect '+(isLeaf?'leaf':'op');
+    if(active) cls='node-rect active';
+    else if(computed && !isLeaf) cls='node-rect done';
+    const label = isLeaf ? (n.kind==='id'?n.name:n.value) : opSymbol(n.op);
+    const w = isLeaf?46:46;
+    html += '<rect class="'+cls+'" x="'+(px(n)-w/2)+'" y="'+(py(n)-16)+'" width="'+w+'" height="32" rx="8"></rect>';
+    html += '<text class="node-label" x="'+px(n)+'" y="'+(py(n)+1)+'">'+label+'</text>';
+    if(computed){
+      const val = opts.computedMap.get(n.id);
+      const revealCls = (opts.justRevealedId===n.id) ? 'node-value reveal' : 'node-value';
+      html += '<text class="'+revealCls+'" x="'+px(n)+'" y="'+(py(n)+30)+'">= '+val+'</text>';
+    }
+    if(opts.showInherited && isLeaf && opts.inheritedIds && opts.inheritedIds.has(n.id) && n.kind==='id'){
+      html += '<text class="env-label" x="'+px(n)+'" y="'+(py(n)-22)+'">env</text>';
+    }
+  });
+
+  svg.innerHTML =
+    '<defs><marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--input-c)"/></marker></defs>'
+    + html;
+}
+
+/* ============================================================
+   Q1 — SDD
+   ============================================================ */
+(function(){
+  let tree=null, ops=[];
+  const svg = $('q1-svg');
+
+  function buildSteps(){
+    const expr = $('q1-input').value.trim();
+    tree = parseArith(expr, false);
+    ops = postorderOps(tree, []);
+    if(ops.length===0){
+      return [{message:'Single value — nothing to combine. Value = '+tree.value+'.', tag:'RESULT', tagType:'result', final:true, finalText:'Final result = '+tree.value, computedIds:new Set(), lastId:null}];
+    }
+    const computed = new Map();
+    const steps=[];
+    steps.push({message:'Parsed "'+expr+'" into a syntax tree. Leaves hold literal values; internal nodes wait for both children.', tag:'PARSE', tagType:'input', computedSnapshot:new Map(), activeId:null});
+    ops.forEach((n,idx)=>{
+      const lv = n.left.kind==='op' ? computed.get(n.left.id) : n.left.value;
+      const rv = n.right ? (n.right.kind==='op' ? computed.get(n.right.id) : n.right.value) : null;
+      let val;
+      if(n.op==='neg') val=-lv;
+      else if(n.op==='+') val=lv+rv;
+      else if(n.op==='-') val=lv-rv;
+      else if(n.op==='*') val=lv*rv;
+      else if(n.op==='/'){ if(rv===0) throw new Error('Division by zero in subexpression.'); val=lv/rv; }
+      val = Math.round(val*1e6)/1e6;
+      computed.set(n.id, val);
+      const isFinal = idx===ops.length-1;
+      steps.push({
+        message: n.op==='neg' ? ('Unary negation: −('+lv+') = '+val+'. Synthesized value flows up to the parent.')
+                 : ('Combine children: '+lv+' '+n.op+' '+(rv)+' = '+val+'. This is the node\'s synthesized attribute — it now flows upward.'),
+        tag: isFinal ? 'RESULT' : 'SYNTHESIZE',
+        tagType: isFinal ? 'result' : undefined,
+        activeId: n.id,
+        computedSnapshot: new Map(computed),
+        final: isFinal,
+        finalText: isFinal ? ('Final result = '+val) : undefined
+      });
+    });
+    return steps;
+  }
+
+  function renderStep(i, steps){
+    if(!tree){ svg.innerHTML=''; return; }
+    if(i<0){ renderTreeSVG(svg, tree, {}); return; }
+    const s = steps[i];
+    renderTreeSVG(svg, tree, {
+      activeId: s.activeId,
+      computedMap: s.computedSnapshot,
+      justRevealedId: s.activeId
+    });
+  }
+
+  makeController({ prefix:'q1', buildSteps, renderStep, onReset:()=>{ svg.innerHTML=''; } });
+  renderTreeSVG(svg, parseArith($('q1-input').value.trim(), false), {});
+})();
+
+/* ============================================================
+   Q2 — Postfix
+   ============================================================ */
+(function(){
+  const tokensEl = $('q2-tokens');
+  const stackEl = $('q2-stack');
+
+  function buildSteps(){
+    const raw = $('q2-input').value.trim();
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    if(tokens.length===0) throw new Error('Enter a postfix expression, e.g. 2 3 * 5 4 * +');
+    const stack=[]; const steps=[];
+    tokens.forEach((tok,idx)=>{
+      if(/^-?\d+(\.\d+)?$/.test(tok)){
+        stack.push(parseFloat(tok));
+        steps.push({tok, idx, tag:'PUSH', message:'Read "'+tok+'" → it is an operand → push onto the stack.', stackAfter:[...stack], type:'push'});
+      } else if(['+','-','*','/'].includes(tok)){
+        if(stack.length<2) throw new Error('Operator "'+tok+'" needs two operands, but the stack only has '+stack.length+'.');
+        const b=stack.pop(), a=stack.pop();
+        if(tok==='/' && b===0) throw new Error('Division by zero: "'+a+' / 0" is undefined.');
+        const result = tok==='+'?a+b: tok==='-'?a-b: tok==='*'?a*b : a/b;
+        const rounded = Math.round(result*1e6)/1e6;
+        stack.push(rounded);
+        steps.push({tok, idx, tag:'POP · COMPUTE', message:'Read "'+tok+'" → it is an operator → pop '+b+' and '+a+', compute '+a+' '+tok+' '+b+' = '+rounded+', push result back.', stackAfter:[...stack], type:'op', a, b, result:rounded});
+      } else {
+        throw new Error('Invalid token "'+tok+'". Only numbers and + - * / are allowed.');
+      }
+    });
+    if(stack.length!==1) throw new Error('Leftover operands on the stack ('+stack.length+') — this is not a valid postfix expression.');
+    steps.push({tag:'RESULT', tagType:'result', message:'All tokens consumed. Exactly one value remains — bottom-up, S-attributed evaluation complete.', stackAfter:[...stack], type:'done', final:true, finalText:'Final result = '+stack[0]});
+    return steps;
+  }
+
+  function renderStep(i, steps){
+    const raw = $('q2-input').value.trim();
+    const tokens = raw.split(/\s+/).filter(Boolean);
+    tokensEl.innerHTML = tokens.map((t,k)=>{
+      let cls='token-chip';
+      if(i>=0 && steps[i] && steps[i].idx===k) cls+=' current';
+      else if(i>=0 && steps[i] && steps[i].idx!==undefined && k<steps[i].idx) cls+=' processed';
+      else if(i>=0 && steps[i] && steps[i].type==='done') cls+=' processed';
+      return '<span class="'+cls+'">'+t+'</span>';
+    }).join('');
+
+    let stack = [];
+    if(i>=0 && steps[i]) stack = steps[i].stackAfter;
+    stackEl.innerHTML = stack.map((v,k)=>{
+      const isTop = k===stack.length-1;
+      const isResult = i>=0 && steps[i] && steps[i].type==='done';
+      return '<div class="stack-box'+(isResult?' result':'')+'">'+v+'</div>';
+    }).join('');
+  }
+
+  makeController({ prefix:'q2', buildSteps, renderStep, onReset:()=>{ tokensEl.innerHTML=''; stackEl.innerHTML=''; } });
+})();
+
+/* ============================================================
+   Q3 — L-Attributed
+   ============================================================ */
+(function(){
+  let tree=null;
+  const svg = $('q3-svg');
+  const envStrip = $('q3-envstrip');
+
+  function getEnv(){
+    return {
+      a: parseFloat($('q3-a').value)||0,
+      b: parseFloat($('q3-b').value)||0,
+      c: parseFloat($('q3-c').value)||0
+    };
+  }
+
+  function buildSteps(){
+    const expr = $('q3-input').value.trim();
+    tree = parseArith(expr, true);
+    const ids = collectAll(tree, []).filter(n=>n.kind==='id');
+    const env = getEnv();
+    ids.forEach(n=>{ if(!(n.name in env)) throw new Error('Variable "'+n.name+'" has no assigned value. Use only a, b, c.'); });
+
+    const steps=[];
+    const inheritedIds = new Set();
+    // Phase 1: inherited env passed top-down (root -> leaves)
+    steps.push({
+      message:'Environment {a='+env.a+', b='+env.b+', c='+env.c+'} is defined at the root and passed downward — an inherited attribute.',
+      tag:'INHERIT', tagType:'input', phase:'inherit', activeId:tree.id, inheritedIds:new Set(inheritedIds)
+    });
+    ids.forEach(n=>{
+      inheritedIds.add(n.id);
+      steps.push({
+        message:'Leaf "'+n.name+'" receives the inherited environment from its parent and looks up '+n.name+' = '+env[n.name]+'.',
+        tag:'INHERIT', tagType:'input', phase:'inherit', activeId:n.id, inheritedIds:new Set(inheritedIds)
+      });
+    });
+
+    // Phase 2: synthesized bottom-up
+    const ops = postorderOps(tree, []);
+    const computed = new Map();
+    ids.forEach(n=>computed.set(n.id, env[n.name])); // leaves already "computed" via env lookup
+    if(ops.length===0){
+      const v = env[tree.name];
+      steps.push({message:'Single identifier — synthesized value = '+v+'.', tag:'RESULT', tagType:'result', phase:'synth', activeId:tree.id, inheritedIds:new Set(inheritedIds), computedSnapshot:new Map(computed), final:true, finalText:'Final result = '+v});
+      return steps;
+    }
+    ops.forEach((n,idx)=>{
+      const lv = n.left.kind==='op' ? computed.get(n.left.id) : computed.get(n.left.id);
+      const rv = n.right ? computed.get(n.right.id) : null;
+      let val;
+      if(n.op==='neg') val=-lv;
+      else if(n.op==='+') val=lv+rv;
+      else if(n.op==='-') val=lv-rv;
+      else if(n.op==='*') val=lv*rv;
+      else if(n.op==='/'){ if(rv===0) throw new Error('Division by zero in subexpression.'); val=lv/rv; }
+      val = Math.round(val*1e6)/1e6;
+      computed.set(n.id, val);
+      const isFinal = idx===ops.length-1;
+      steps.push({
+        message:'Synthesize node: '+lv+' '+n.op+' '+rv+' = '+val+'. Value moves upward from children to parent.',
+        tag: isFinal?'RESULT':'SYNTHESIZE', tagType: isFinal?'result':undefined,
+        phase:'synth', activeId:n.id, inheritedIds:new Set(inheritedIds), computedSnapshot:new Map(computed),
+        final:isFinal, finalText: isFinal?('Final result = '+val):undefined
+      });
+    });
+    return steps;
+  }
+
+  function renderStep(i, steps){
+    if(!tree){ svg.innerHTML=''; envStrip.innerHTML=''; return; }
+    const env = getEnv();
+    envStrip.innerHTML = ['a','b','c'].map(k=>'<span class="env-pill">'+k+' = '+env[k]+'</span>').join('');
+    if(i<0){ renderTreeSVG(svg, tree, {showInherited:true, inheritedIds:new Set()}); return; }
+    const s = steps[i];
+    renderTreeSVG(svg, tree, {
+      showInherited:true,
+      inheritedIds: s.inheritedIds || new Set(),
+      activeId: s.phase==='synth' ? s.activeId : (s.phase==='inherit' ? s.activeId : null),
+      computedMap: s.computedSnapshot,
+      justRevealedId: s.phase==='synth' ? s.activeId : null
+    });
+  }
+
+  makeController({ prefix:'q3', buildSteps, renderStep, onReset:()=>{ svg.innerHTML=''; envStrip.innerHTML=''; } });
+  try{ renderTreeSVG(svg, parseArith($('q3-input').value.trim(), true), {showInherited:true, inheritedIds:new Set()}); }catch(e){}
+})();
+
+/* ============================================================
+   Q4 — Type Equivalence
+   ============================================================ */
+(function(){
+  const compareEl = $('q4-compare');
+  const ALLOWED = ['int','float','char','double','void'];
+
+  function parseType(str){
+    str = (str||'').trim();
+    if(!str) throw new Error('Enter both type A and type B.');
+    let stars=0; let s=str;
+    while(s.endsWith('*')){ stars++; s=s.slice(0,-1).trim(); }
+    const base = s.toLowerCase();
+    if(!ALLOWED.includes(base)) throw new Error('Unknown base type "'+s+'". Try: '+ALLOWED.join(', ')+' (optionally followed by * for pointers).');
+    return {raw:str, base, stars};
+  }
+
+  function layersOf(t){
+    const layers=[];
+    for(let k=0;k<t.stars;k++) layers.push('pointer to →');
+    layers.push(t.base);
+    return layers;
+  }
+
+  function buildSteps(){
+    const rawA = $('q4-a').value, rawB = $('q4-b').value;
+    const A = parseType(rawA), B = parseType(rawB);
+    const steps=[];
+    steps.push({message:'Type A "'+A.raw+'" breaks down into '+A.stars+' pointer layer(s) over base type "'+A.base+'".', tag:'PARSE A', tagType:'input', stage:'showA', A, B});
+    steps.push({message:'Type B "'+B.raw+'" breaks down into '+B.stars+' pointer layer(s) over base type "'+B.base+'".', tag:'PARSE B', tagType:'input', stage:'showB', A, B});
+    const depthMatch = A.stars===B.stars;
+    steps.push({
+      message: depthMatch ? ('Pointer depth matches: both have '+A.stars+' level(s) of indirection.') : ('Pointer depth differs: '+A.stars+' vs '+B.stars+' — types cannot be equivalent.'),
+      tag:'COMPARE DEPTH', stage:'depth', A, B, depthMatch
+    });
+    let baseMatch=false;
+    if(depthMatch){
+      baseMatch = A.base===B.base;
+      steps.push({
+        message: baseMatch ? ('Base types match: "'+A.base+'" = "'+B.base+'".') : ('Base types differ: "'+A.base+'" ≠ "'+B.base+'".'),
+        tag:'COMPARE BASE', stage:'base', A, B, depthMatch, baseMatch
+      });
+    }
+    const equivalent = depthMatch && baseMatch;
+    steps.push({
+      message: equivalent ? ('"'+A.raw+'" and "'+B.raw+'" are structurally equivalent — the compiler treats them as the same type.')
+               : ('"'+A.raw+'" and "'+B.raw+'" are NOT equivalent — an assignment between them would need an explicit cast or would be a type error.'),
+      tag:'RESULT', tagType: equivalent?'result':undefined, stage:'verdict', A, B, depthMatch, baseMatch, equivalent,
+      final:true, finalText: equivalent ? 'Equivalent ✓' : 'Not Equivalent ✕'
+    });
+    return steps;
+  }
+
+  function renderStep(i, steps){
+    if(i<0){ compareEl.innerHTML=''; return; }
+    const s = steps[i];
+    const A=s.A, B=s.B;
+    const stageOrder = ['showA','showB','depth','base','verdict'];
+    const reached = stageOrder.indexOf(s.stage);
+
+    function card(t, label, activeNow, verdictCls){
+      const layers = layersOf(t);
+      let cls='type-card';
+      if(activeNow) cls+=' active-cmp';
+      if(verdictCls) cls+=' '+verdictCls;
+      let html='<div class="'+cls+'"><h4>'+label+' — "'+t.raw+'"</h4>';
+      layers.forEach((l,idx)=>{
+        const isBase = idx===layers.length-1;
+        html += '<div class="type-layer'+(isBase?' base':'')+'">'+l+'</div>';
+      });
+      html+='</div>';
+      return html;
+    }
+
+    let verdictCls = '';
+    if(s.stage==='verdict') verdictCls = s.equivalent ? 'match' : 'mismatch';
+    else if(s.stage==='base' && !s.baseMatch) verdictCls='';
+
+    let html = '<div style="display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; justify-content:center; width:100%;">';
+    html += card(A, 'Type A', reached>=0, verdictCls);
+    html += '<div class="vs-badge">vs</div>';
+    html += card(B, 'Type B', reached>=1, verdictCls);
+    html += '</div>';
+    if(s.stage==='verdict'){
+      html += '<div class="verdict '+(s.equivalent?'equiv':'notequiv')+'">'+(s.equivalent?'✓ Equivalent':'✕ Not Equivalent')+'</div>';
+    }
+    compareEl.innerHTML = html;
+  }
+
+  makeController({ prefix:'q4', buildSteps, renderStep, onReset:()=>{ compareEl.innerHTML=''; } });
+})();
+
+/* ============================================================
+   Q5 — Type Checking
+   ============================================================ */
+(function(){
+  const flowEl = $('q5-flow');
+  const RANK = {char:1, int:2, float:3};
+
+  function buildSteps(){
+    const t1 = $('q5-t1').value, t2 = $('q5-t2').value, op = $('q5-op').value;
+    const steps=[];
+    steps.push({message:'Expression: <code>'+t1+' '+op+' '+t2+'</code>. Semantic analysis begins by ranking each operand type (char &lt; int &lt; float).', tag:'READ', tagType:'input', stage:'read', t1, t2, op});
+    const r1=RANK[t1], r2=RANK[t2];
+    if(r1===r2){
+      steps.push({message:'Both operands are already "'+t1+'" — no promotion needed.', tag:'CHECK', stage:'norank', t1, t2, op, resultType:t1});
+    } else {
+      const [lowT, highT] = r1<r2 ? [t1,t2] : [t2,t1];
+      steps.push({message:'Ranks differ: "'+t1+'" ('+r1+') vs "'+t2+'" ('+r2+'). The lower-ranked type must be promoted.', tag:'CHECK RANK', stage:'compare', t1, t2, op});
+      steps.push({message:'Usual arithmetic conversion: "'+lowT+'" is implicitly promoted to "'+highT+'" before applying "'+op+'".', tag:'PROMOTE', stage:'promote', t1, t2, op, lowT, highT, resultType:highT});
+    }
+    const resultType = r1===r2 ? t1 : (r1>r2?t1:t2);
+    steps.push({
+      message:'Both operands are now compatible "'+resultType+'" values, so <code>'+t1+' '+op+' '+t2+'</code> is a <b>valid</b> expression with result type "'+resultType+'".',
+      tag:'RESULT', tagType:'result', stage:'verdict', t1, t2, op, resultType, valid:true,
+      final:true, finalText:'Valid — result type: '+resultType
+    });
+    return steps;
+  }
+
+  function renderStep(i, steps){
+    if(i<0){ flowEl.innerHTML=''; return; }
+    const s = steps[i];
+    const stageOrder=['read','norank','compare','promote','verdict'];
+    const reached = stageOrder.indexOf(s.stage);
+
+    function chip(type, promoted){
+      return '<div class="operand-chip'+(promoted?' promoted':'')+'">'+type+(promoted?'<small>promoted</small>':'<small>operand</small>')+'</div>';
+    }
+
+    let html = '<div style="display:flex; flex-direction:column; align-items:center; gap:10px; width:100%;">';
+    html += '<div style="display:flex; align-items:center; gap:14px;">';
+    const promote1 = s.stage==='promote' && s.lowT===s.t1 || (s.stage==='verdict' && s.resultType===s.t1 && s.t1!==s.t2 && RANK[s.t1]<RANK[s.t2]);
+    const promote2 = s.stage==='promote' && s.lowT===s.t2 || (s.stage==='verdict' && s.resultType===s.t2 && s.t1!==s.t2 && RANK[s.t2]<RANK[s.t1]);
+    html += chip(s.t1, (s.stage==='promote'||s.stage==='verdict') && RANK[s.t1]<RANK[s.t2]);
+    html += '<div class="op-chip">'+s.op+'</div>';
+    html += chip(s.t2, (s.stage==='promote'||s.stage==='verdict') && RANK[s.t2]<RANK[s.t1]);
+    html += '</div>';
+    if(s.stage==='promote' || s.stage==='verdict'){
+      html += '<div class="arrow-down">↓ usual arithmetic conversion ↓</div>';
+      html += '<div class="result-chip">'+(s.resultType)+' result</div>';
+    } else if(s.stage==='norank'){
+      html += '<div class="arrow-down">↓ same type — no conversion ↓</div>';
+      html += '<div class="result-chip">'+s.resultType+' result</div>';
+    }
+    html += '</div>';
+    flowEl.innerHTML = html;
+  }
+
+  makeController({ prefix:'q5', buildSteps, renderStep, onReset:()=>{ flowEl.innerHTML=''; } });
+})();
+</script>
+</body>
+</html>
